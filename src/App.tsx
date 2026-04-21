@@ -442,12 +442,15 @@ function RouterCard({ router }: { key?: React.Key; router: NetworkRouter }) {
   const isUp = router.latest_log?.status === 'Success';
   
   // Format log data for chart
-  const chartData = router.logs.map((log, i) => ({
-    time: i, // Just relative time for minimal chart
-    clients: log.client_count,
-    rx: log.download_speed / 1000,
-    tx: log.upload_speed / 1000
-  })).reverse();
+  const chartData = router.logs.map((log) => {
+    const d = new Date(log.created_at);
+    return {
+      time: `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`,
+      clients: log.client_count,
+      rx: +(log.download_speed / 1000).toFixed(1),
+      tx: +(log.upload_speed / 1000).toFixed(1)
+    };
+  }).reverse();
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
@@ -490,24 +493,46 @@ function RouterCard({ router }: { key?: React.Key; router: NetworkRouter }) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6 mt-4">
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Trend Klien</p>
-            <div className="h-16">
+            <div className="flex justify-between items-end mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Trend Klien (Aktif)</p>
+              <span className="text-[10px] text-slate-400">10 Log</span>
+            </div>
+            <div className="h-28 bg-white/50 rounded-lg p-2 border border-slate-100/50">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <Line type="monotone" dataKey="clients" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <XAxis dataKey="time" hide />
+                  <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                  <Tooltip 
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    labelStyle={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}
+                    itemStyle={{ fontSize: '13px', fontWeight: 600, padding: '2px 0' }}
+                  />
+                  <Line type="monotone" dataKey="clients" name="Total Klien" stroke="#3b82f6" strokeWidth={2.5} dot={{r: 0}} activeDot={{r: 5, strokeWidth: 0}} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Trend Trafik</p>
-            <div className="h-16">
+            <div className="flex justify-between items-end mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Trend Trafik (Mbps)</p>
+              <span className="text-[10px] text-slate-400">10 Log</span>
+            </div>
+            <div className="h-28 bg-white/50 rounded-lg p-2 border border-slate-100/50">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
-                  <Line type="step" dataKey="rx" stroke="#10b981" strokeWidth={1.5} dot={false} />
-                  <Line type="step" dataKey="tx" stroke="#f43f5e" strokeWidth={1.5} dot={false} />
+                  <XAxis dataKey="time" hide />
+                  <YAxis hide domain={['auto', 'auto']} />
+                  <Tooltip 
+                    cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    labelStyle={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}
+                    itemStyle={{ fontSize: '13px', fontWeight: 600, padding: '2px 0' }}
+                  />
+                  <Line type="monotone" dataKey="rx" name="Download" stroke="#10b981" strokeWidth={2.5} dot={{r: 0}} activeDot={{r: 5, strokeWidth: 0}} />
+                  <Line type="monotone" dataKey="tx" name="Upload" stroke="#f43f5e" strokeWidth={2.5} dot={{r: 0}} activeDot={{r: 5, strokeWidth: 0}} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
