@@ -137,6 +137,13 @@ export default function App() {
   const activeRoutersCount = historyData?.routers.filter(r => r.latest_log?.status === 'Success').length || 0;
   const totalRoutersCount = historyData?.routers.length || 0;
 
+  const avgRx = wanStats.length > 0
+    ? (wanStats.reduce((sum, data) => sum + data.rx, 0) / wanStats.length).toFixed(1)
+    : '0.0';
+  const avgTx = wanStats.length > 0
+    ? (wanStats.reduce((sum, data) => sum + data.tx, 0) / wanStats.length).toFixed(1)
+    : '0.0';
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -186,10 +193,10 @@ export default function App() {
           />
           <StatCard
             icon={<ArrowDown size={24} className="text-indigo-600" />}
-            label="Total Download"
-            value={`${wanStats.length > 0 ? wanStats[wanStats.length - 1].rx.toFixed(1) : '0.0'}`}
+            label="Rata-rata Download"
+            value={`${avgRx}`}
             suffix=" Mbps"
-            sub="Rata-rata trafik masuk saat ini"
+            sub={`Periode ~${wanStats.length * 2} detik terakhir`}
             bg="bg-indigo-50"
           />
           <StatCard
@@ -278,8 +285,8 @@ export default function App() {
               Bandwidth Realtime (WAN Induk)
             </h2>
             <div className="flex items-center gap-4 mt-2 sm:mt-0 text-sm font-medium">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Download</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-rose-500"></span> Upload</div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Download (Avg: {avgRx} Mbps)</div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-rose-500"></span> Upload (Avg: {avgTx} Mbps)</div>
             </div>
           </div>
           <div className="h-[250px]">
