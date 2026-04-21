@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Wifi, Users, Server, RefreshCw, HardDrive, Settings, ArrowDown, ArrowUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Activity, Wifi, Users, Server, RefreshCw, HardDrive, Settings, ArrowDown, ArrowUp, AlertCircle, CheckCircle2, Search } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // --- Types ---
@@ -56,6 +56,7 @@ export default function App() {
   const [topDomains, setTopDomains] = useState<TopDomainsResponse | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [routerSearch, setRouterSearch] = useState('');
 
   // --- Data Fetching ---
   const fetchHistory = async () => {
@@ -136,6 +137,14 @@ export default function App() {
 
   const activeRoutersCount = historyData?.routers.filter(r => r.latest_log?.status === 'Success').length || 0;
   const totalRoutersCount = historyData?.routers.length || 0;
+
+  const filteredRouters = historyData?.routers.filter(r => {
+    const searchLower = routerSearch.toLowerCase();
+    const matchesName = r.name.toLowerCase().includes(searchLower);
+    const statusString = r.latest_log?.status === 'Success' ? 'online' : 'offline';
+    const matchesStatus = statusString.includes(searchLower) || (r.latest_log?.status.toLowerCase() || '').includes(searchLower);
+    return matchesName || matchesStatus;
+  }) || [];
 
   const avgRx = wanStats.length > 0
     ? (wanStats.reduce((sum, data) => sum + data.rx, 0) / wanStats.length).toFixed(1)
@@ -230,11 +239,24 @@ export default function App() {
 
           {/* Router Summary Table */}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 overflow-hidden flex flex-col">
-            <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-              <HardDrive size={20} className="text-slate-400" />
-              Status Router Utama
-            </h2>
-            <div className="overflow-auto flex-1">
+            <div className="mb-6 space-y-4">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <HardDrive size={20} className="text-slate-400" />
+                Status Router Utama
+              </h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <input
+                  type="text"
+                  placeholder="Cari router atau status..."
+                  value={routerSearch}
+                  onChange={(e) => setRouterSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 hover:bg-slate-100/50"
+                  aria-label="Cari router"
+                />
+              </div>
+            </div>
+            <div className="overflow-auto flex-1 bg-white rounded-lg border border-slate-100">
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-50 text-slate-500 font-medium">
                   <tr>
@@ -244,33 +266,44 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {historyData?.routers.map(router => {
-                    const isUp = router.latest_log?.status === 'Success';
-                    return (
-                      <tr key={router.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-slate-700">
-                          <div className="line-clamp-1">{router.name}</div>
-                          <div className="text-xs text-slate-400 font-normal">{router.ip}</div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {isUp ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                              <CheckCircle2 size={12} />
-                              Online
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                              <AlertCircle size={12} />
-                              Offline
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-slate-700">
-                          {router.latest_log?.client_count || 0}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {filteredRouters.length > 0 ? (
+                    filteredRouters.map(router => {
+                      const isUp = router.latest_log?.status === 'Success';
+                      return (
+                        <tr key={router.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-slate-700">
+                            <div className="line-clamp-1">{router.name}</div>
+                            <div className="text-xs text-slate-400 font-normal">{router.ip}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {isUp ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                <CheckCircle2 size={12} />
+                                Online
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                <AlertCircle size={12} />
+                                Offline
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-700">
+                            {router.latest_log?.client_count || 0}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-8 text-center">
+                        <div className="flex flex-col items-center justify-center text-slate-400">
+                          <Search size={24} className="mb-2 opacity-30" />
+                          <span className="text-sm">Tidak ada router yang cocok.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
